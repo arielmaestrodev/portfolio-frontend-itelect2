@@ -12,6 +12,7 @@ const navLinks = [
   { href: "/about", label: "About" },
   { href: "/projects", label: "Projects" },
   { href: "/blog", label: "Blog" },
+  { href: "/contact", label: "Contact" },
 ] as const;
 
 export function Header() {
@@ -49,9 +50,9 @@ export function Header() {
 
         <div className="flex shrink-0 items-center gap-2">
           <ThemeToggle />
-          <Link href="/contact">
+          <Link href="/login">
             <Button size="sm" className="hidden sm:inline-flex">
-              Contact
+              Login
             </Button>
           </Link>
           <Button
@@ -99,9 +100,9 @@ export function Header() {
                 );
               })}
               <li className="mt-2 pt-2 border-t border-border">
-                <Link href="/contact" onClick={() => setOpen(false)}>
+                <Link href="/login" onClick={() => setOpen(false)}>
                   <Button size="sm" className="w-full justify-center">
-                    Contact
+                    Login
                   </Button>
                 </Link>
               </li>
