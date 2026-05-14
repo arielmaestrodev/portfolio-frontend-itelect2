@@ -27,22 +27,25 @@ export const blogService = {
     return response.data;
   },
 
-  create: async (data: BlogInput) => {
+  create: async (data: BlogInput & { userId: string }) => {
     const response = await axiosInstance.post("/api/blog/v1/create-post", data);
     return response.data;
   },
 
-  update: async (id: string, data: Partial<BlogInput>) => {
-    // Backend expects id in the body for update-post
+  update: async (id: string, userId: string, data: Partial<BlogInput>) => {
     const response = await axiosInstance.post("/api/blog/v1/update-post", {
       id,
+      userId,
       ...data,
     });
     return response.data;
   },
 
-  delete: async (id: string) => {
-    const response = await axiosInstance.delete(`/api/blog/v1/delete-post/${id}`);
+  delete: async (id: string, userId: string) => {
+    const response = await axiosInstance.post("/api/blog/v1/delete-post", {
+      id,
+      userId,
+    });
     return response.data;
   },
 };

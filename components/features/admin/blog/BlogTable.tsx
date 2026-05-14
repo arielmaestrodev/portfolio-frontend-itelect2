@@ -10,11 +10,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { blogService, BlogPost } from "@/services/blog.service";
+import { useAuth } from "@/context/AuthContext";
 
 export function BlogTable() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const fetchPosts = async () => {
     setIsLoading(true);
@@ -37,10 +39,10 @@ export function BlogTable() {
   }, []);
 
   const handleDelete = async () => {
-    if (!deleteId) return;
+    if (!deleteId || !user?.id) return;
 
     try {
-      const response = await blogService.delete(deleteId);
+      const response = await blogService.delete(deleteId, user.id);
       if (response.code === 200) {
         toast.success("Blog post deleted successfully!");
         setPosts(posts.filter((post) => post.id !== deleteId));

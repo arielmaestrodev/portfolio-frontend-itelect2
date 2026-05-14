@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { blogService, BlogPost } from "@/services/blog.service";
+import { useAuth } from "@/context/AuthContext";
 
 const blogSchema = z.object({
   title: z.string({ message: "Title is required" }).min(5, "Title must be at least 5 characters"),
@@ -27,6 +28,7 @@ interface BlogFormProps {
 
 export function BlogForm({ initialData }: BlogFormProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const isEditing = !!initialData;
 
   const form = useForm<FormData>({
@@ -40,6 +42,11 @@ export function BlogForm({ initialData }: BlogFormProps) {
   });
 
   const onSubmit = async (data: FormData) => {
+    if (!user?.id) {
+      toast.error("User session not found. Please re-login.");
+      return;
+    }
+
     const formattedData = {
       ...data,
       category: data.category ? data.category.split(",").map(s => s.trim()) : [],
@@ -48,7 +55,9 @@ export function BlogForm({ initialData }: BlogFormProps) {
     try {
       if (isEditing && initialData) {
         // Partial Update Logic
-        const dirtyFields: any = {};
+        const dirtyFields: any = {
+          userId: user.id
+        };
         
         if (formattedData.title !== initialData.title) dirtyFields.title = formattedData.title;
         if (formattedData.content !== initialData.content) dirtyFields.content = formattedData.content;
@@ -58,13 +67,14 @@ export function BlogForm({ initialData }: BlogFormProps) {
         const currentCat = formattedData.category.join(",");
         if (initialCat !== currentCat) dirtyFields.category = formattedData.category;
 
-        if (Object.keys(dirtyFields).length === 0) {
+        // Note: we check keys length > 1 because we added userId as default
+        if (Object.keys(dirtyFields).length === 1) {
           toast.info("No changes detected");
           router.push("/admin/blog");
           return;
         }
 
-        const response = await blogService.update(initialData.id, dirtyFields);
+        const response = await blogService.update(initialData.id, user.id, dirtyFields);
         if (response.code === 200) {
           toast.success("Blog post updated successfully!");
           router.push("/admin/blog");
@@ -72,7 +82,10 @@ export function BlogForm({ initialData }: BlogFormProps) {
           toast.error(response.message || "Failed to update blog post");
         }
       } else {
-        const response = await blogService.create(formattedData);
+        const response = await blogService.create({
+          ...formattedData,
+          userId: user.id
+        });
         if (response.code === 201 || response.code === 200) {
           toast.success("Blog post created successfully!");
           router.push("/admin/blog");
