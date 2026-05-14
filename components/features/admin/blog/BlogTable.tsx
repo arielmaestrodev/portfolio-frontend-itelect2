@@ -1,32 +1,74 @@
 "use client"
 
-import { useState } from "react";
-import {  Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useEffect, useState } from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Eye, MoreHorizontal } from "lucide-react";
+import { Edit, Trash2, Eye, MoreHorizontal, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-
-// Mock data
-const MOCK_POSTS = [
-  { id: "1", title: "Getting Started with Next.js", category: ["Web Development"], date: "2026-05-10" },
-  { id: "2", title: "Mastering Tailwind CSS", category: ["Design"], date: "2026-05-12" },
-  { id: "3", title: "React 19 New Features", category: ["Web Development", "React"], date: "2026-05-14" },
-];
+import { blogService, BlogPost } from "@/services/blog.service";
 
 export function BlogTable() {
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const handleDelete = () => {
-    if (deleteId) {
-      console.log("Deleting blog post:", deleteId);
-      toast.success("Blog post deleted successfully!");
+  const fetchPosts = async () => {
+    setIsLoading(true);
+    try {
+      const response = await blogService.getAll();
+      if (response.code === 200) {
+        setPosts(response.data);
+      } else {
+        toast.error(response.message || "Failed to fetch blog posts");
+      }
+    } catch (error) {
+      console.error("[BlogTable]", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+
+    try {
+      const response = await blogService.delete(deleteId);
+      if (response.code === 200) {
+        toast.success("Blog post deleted successfully!");
+        setPosts(posts.filter((post) => post.id !== deleteId));
+      } else {
+        toast.error(response.message || "Failed to delete blog post");
+      }
+    } catch (error) {
+      console.error("[BlogTable]", error);
+    } finally {
       setDeleteId(null);
     }
   };
+
+  const formatDate = (dateString: string) => {
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }).format(new Date(dateString));
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center rounded-md border bg-card">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-md border bg-card">
@@ -40,52 +82,60 @@ export function BlogTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {MOCK_POSTS.map((post) => (
-            <TableRow key={post.id}>
-              <TableCell className="font-medium">{post.title}</TableCell>
-              <TableCell>
-                <div className="flex gap-1 flex-wrap">
-                  {post.category.map(cat => (
-                    <Badge key={cat} variant="secondary" className="text-[10px]">{cat}</Badge>
-                  ))}
-                </div>
-              </TableCell>
-              <TableCell>{post.date}</TableCell>
-              <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href={`/admin/blog/${post.id}/view`} className="flex items-center">
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Details
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href={`/admin/blog/${post.id}`} className="flex items-center">
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit Post
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      className="text-destructive focus:text-destructive"
-                      onClick={() => setDeleteId(post.id)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete Post
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+          {posts.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                No blog posts found.
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            posts.map((post) => (
+              <TableRow key={post.id}>
+                <TableCell className="font-medium">{post.title}</TableCell>
+                <TableCell>
+                  <div className="flex gap-1 flex-wrap">
+                    {post.category?.map(cat => (
+                      <Badge key={cat} variant="secondary" className="text-[10px]">{cat}</Badge>
+                    ))}
+                  </div>
+                </TableCell>
+                <TableCell>{formatDate(post.createdAt)}</TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href={`/admin/blog/${post.id}/view`} className="flex items-center cursor-pointer">
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Details
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/admin/blog/${post.id}`} className="flex items-center cursor-pointer">
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Post
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        className="text-destructive focus:text-destructive cursor-pointer"
+                        onClick={() => setDeleteId(post.id)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Post
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
 

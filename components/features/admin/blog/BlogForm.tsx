@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { blogService, BlogPost } from "@/services/blog.service";
 
 const blogSchema = z.object({
   title: z.string({ message: "Title is required" }).min(5, "Title must be at least 5 characters"),
@@ -21,13 +22,7 @@ const blogSchema = z.object({
 type FormData = z.infer<typeof blogSchema>;
 
 interface BlogFormProps {
-  initialData?: {
-    id?: string;
-    title: string;
-    content: string;
-    excerpt?: string;
-    category?: string;
-  };
+  initialData?: BlogPost;
 }
 
 export function BlogForm({ initialData }: BlogFormProps) {
@@ -40,7 +35,7 @@ export function BlogForm({ initialData }: BlogFormProps) {
       title: initialData?.title || "",
       content: initialData?.content || "",
       excerpt: initialData?.excerpt || "",
-      category: initialData?.category || "",
+      category: initialData?.category?.join(", ") || "",
     },
   });
 
@@ -49,10 +44,45 @@ export function BlogForm({ initialData }: BlogFormProps) {
       ...data,
       category: data.category ? data.category.split(",").map(s => s.trim()) : [],
     };
-    console.log("Blog data:", formattedData);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast.success(isEditing ? "Blog post updated successfully!" : "Blog post created successfully!");
-    router.push("/admin/blog");
+
+    try {
+      if (isEditing && initialData) {
+        // Partial Update Logic
+        const dirtyFields: any = {};
+        
+        if (formattedData.title !== initialData.title) dirtyFields.title = formattedData.title;
+        if (formattedData.content !== initialData.content) dirtyFields.content = formattedData.content;
+        if (formattedData.excerpt !== (initialData.excerpt || "")) dirtyFields.excerpt = formattedData.excerpt;
+        
+        const initialCat = (initialData.category || []).join(",");
+        const currentCat = formattedData.category.join(",");
+        if (initialCat !== currentCat) dirtyFields.category = formattedData.category;
+
+        if (Object.keys(dirtyFields).length === 0) {
+          toast.info("No changes detected");
+          router.push("/admin/blog");
+          return;
+        }
+
+        const response = await blogService.update(initialData.id, dirtyFields);
+        if (response.code === 200) {
+          toast.success("Blog post updated successfully!");
+          router.push("/admin/blog");
+        } else {
+          toast.error(response.message || "Failed to update blog post");
+        }
+      } else {
+        const response = await blogService.create(formattedData);
+        if (response.code === 201 || response.code === 200) {
+          toast.success("Blog post created successfully!");
+          router.push("/admin/blog");
+        } else {
+          toast.error(response.message || "Failed to create blog post");
+        }
+      }
+    } catch (error) {
+      console.error("[BlogForm]", error);
+    }
   };
 
   return (
