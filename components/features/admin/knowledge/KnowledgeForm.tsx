@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { knowledgeService, KnowledgeEntry } from "@/services/knowledge.service";
 
 const knowledgeSchema = z.object({
   question: z.string().min(5, "Question must be at least 5 characters"),
@@ -20,15 +21,21 @@ const knowledgeSchema = z.object({
 
 type FormData = z.infer<typeof knowledgeSchema>;
 
-export function KnowledgeForm() {
+interface KnowledgeFormProps {
+  initialData?: KnowledgeEntry;
+}
+
+export function KnowledgeForm({ initialData }: KnowledgeFormProps) {
   const router = useRouter();
+  const isEdit = !!initialData;
+
   const form = useForm<FormData>({
     resolver: zodResolver(knowledgeSchema),
     defaultValues: {
-      question: "",
-      answer: "",
-      category: "",
-      tags: "",
+      question: initialData?.question || "",
+      answer: initialData?.answer || "",
+      category: initialData?.category || "",
+      tags: initialData?.tags?.join(", ") || "",
     },
   });
 
@@ -37,16 +44,51 @@ export function KnowledgeForm() {
       ...data,
       tags: data.tags ? data.tags.split(",").map(s => s.trim()) : [],
     };
-    console.log("Knowledge data:", formattedData);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast.success("Knowledge item created successfully!");
-    router.push("/admin/knowledgebase");
+
+    try {
+      if (isEdit) {
+        // Compare with initialData and only send what changed
+        const dirtyFields: any = {};
+        
+        if (formattedData.question !== initialData.question) dirtyFields.question = formattedData.question;
+        if (formattedData.answer !== initialData.answer) dirtyFields.answer = formattedData.answer;
+        if (formattedData.category !== (initialData.category || "")) dirtyFields.category = formattedData.category;
+        
+        const initialTags = (initialData.tags || []).join(",");
+        const currentTags = formattedData.tags.join(",");
+        if (initialTags !== currentTags) dirtyFields.tags = formattedData.tags;
+
+        if (Object.keys(dirtyFields).length === 0) {
+          toast.info("No changes detected");
+          router.push("/admin/knowledgebase");
+          return;
+        }
+
+        const response = await knowledgeService.update(initialData.id, dirtyFields);
+        if (response.code === 200) {
+          toast.success("Knowledge item updated successfully!");
+          router.push("/admin/knowledgebase");
+        } else {
+          toast.error(response.message || "Failed to update item");
+        }
+      } else {
+        const response = await knowledgeService.create(formattedData);
+        if (response.code === 201 || response.code === 200) {
+          toast.success("Knowledge item created successfully!");
+          router.push("/admin/knowledgebase");
+        } else {
+          toast.error(response.message || "Failed to create item");
+        }
+      }
+    } catch (error) {
+      console.log("[KnowledgeForm]", error);
+    }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create New Knowledge Entry</CardTitle>
+        <CardTitle>{isEdit ? "Edit Knowledge Entry" : "Create New Knowledge Entry"}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -105,7 +147,9 @@ export function KnowledgeForm() {
               Cancel
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Creating..." : "Create Entry"}
+              {form.formState.isSubmitting 
+                ? (isEdit ? "Updating..." : "Creating...") 
+                : (isEdit ? "Update Entry" : "Create Entry")}
             </Button>
           </div>
         </form>
