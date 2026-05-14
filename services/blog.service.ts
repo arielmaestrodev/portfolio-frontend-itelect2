@@ -12,6 +12,7 @@ export type BlogInput = z.infer<typeof blogSchema>;
 
 export interface BlogPost extends BlogInput {
   id: string;
+  slug: string;
   createdAt: string;
   updatedAt: string;
 }

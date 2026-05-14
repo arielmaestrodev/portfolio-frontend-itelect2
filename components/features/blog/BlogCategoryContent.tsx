@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { BlogPost } from "@/constants/blog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { Section } from "@/components/common/Section";
+import { BlogPost } from "@/services/blog.service";
 
 interface BlogCategoryContentProps {
   activeCategories: string[];
@@ -13,21 +13,21 @@ interface BlogCategoryContentProps {
 
 export function BlogCategoryContent({ activeCategories, filteredPosts, mainCategory }: BlogCategoryContentProps) {
   return (
-    <Section className="py-12">
+    <Section className="!py-12">
       <Link 
         href="/blog" 
-        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-8 transition-colors"
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-8 transition-colors w-fit"
       >
         <ArrowLeft size={16} />
         Back to Blog
       </Link>
 
       <div className="flex flex-col gap-4 mb-12">
-        <h1 className="text-4xl font-bold capitalize">
+        <h1 className="text-4xl font-bold">
           Category: {activeCategories.join(" / ")}
         </h1>
         <p className="text-muted-foreground">
-          Showing posts match <span className="font-semibold text-foreground underline decoration-primary decoration-2">{mainCategory}</span>
+          Showing posts matching <span className="font-semibold text-foreground underline decoration-primary decoration-2">{mainCategory}</span>
         </p>
       </div>
 
@@ -35,17 +35,22 @@ export function BlogCategoryContent({ activeCategories, filteredPosts, mainCateg
         {filteredPosts.length > 0 ? (
           filteredPosts.map((post) => (
             <Link key={post.id} href={`/blog/${post.slug}`}>
-              <Card className="h-full hover:border-primary transition-all group">
+              <Card className="h-full hover:border-primary transition-all group bg-card shadow-sm hover:shadow-md">
                 <CardHeader>
-                  <CardTitle className="group-hover:text-primary transition-colors">{post.title}</CardTitle>
+                  <CardTitle className="group-hover:text-primary transition-colors text-xl font-bold">
+                    {post.title}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground text-sm line-clamp-3 mb-4">
+                  <p className="text-muted-foreground text-sm line-clamp-3 mb-4 leading-relaxed">
                     {post.excerpt}
                   </p>
                   <div className="flex gap-2 flex-wrap">
-                    {post.category.map((cat) => (
-                      <Badge key={cat} variant={cat === mainCategory ? "default" : "secondary"}>
+                    {post.category?.map((cat) => (
+                      <Badge 
+                        key={cat} 
+                        variant={cat.toLowerCase() === mainCategory.toLowerCase() ? "default" : "secondary"}
+                      >
                         {cat}
                       </Badge>
                     ))}
@@ -56,7 +61,7 @@ export function BlogCategoryContent({ activeCategories, filteredPosts, mainCateg
           ))
         ) : (
           <div className="col-span-full py-12 text-center border-2 border-dashed rounded-3xl bg-muted/20">
-            <p className="text-muted-foreground">No posts found in this category.</p>
+            <p className="text-muted-foreground italic">No articles found in this category yet.</p>
           </div>
         )}
       </div>

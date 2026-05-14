@@ -1,14 +1,35 @@
 import Link from "next/link";
-import { BlogPost, BLOG_POSTS } from "@/constants/blog";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Section } from "@/components/common/Section";
+import { BlogPost } from "@/services/blog.service";
 
-export function BlogLandingContent() {
+interface BlogLandingContentProps {
+  posts: BlogPost[];
+}
+
+export function BlogLandingContent({ posts }: BlogLandingContentProps) {
+  const formatDate = (dateString: string) => {
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }).format(new Date(dateString));
+  };
+
+  // Get data for real examples
+  const latestPost = posts.length > 0 ? posts[0] : null;
+  const exampleSlug = latestPost?.slug || "getting-started-with-nextjs";
+  const exampleCategory = latestPost?.category?.[0] || "tech";
+  
+  const postDate = latestPost ? new Date(latestPost.createdAt) : new Date();
+  const exampleYear = postDate.getFullYear();
+  const exampleMonth = String(postDate.getMonth() + 1).padStart(2, '0');
+
   return (
-    <Section className="py-12">
+    <Section className="!py-12">
       <div className="flex flex-col gap-4 mb-12">
-        <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">Blog Tutorial</h1>
+        <h1 className="text-4xl font-bold tracking-tight">Blog Tutorial</h1>
         <p className="text-xl text-muted-foreground">
           Learn how Next.js App Router handles different dynamic routing patterns.
         </p>
@@ -28,9 +49,9 @@ export function BlogLandingContent() {
           </CardHeader>
           <CardContent>
             <code className="text-sm bg-muted p-1 rounded font-mono block mb-4">
-              /blog/getting-started-with-nextjs
+              /blog/{exampleSlug}
             </code>
-            <Link href="/blog/getting-started-with-nextjs" className="text-primary hover:underline text-sm font-medium">
+            <Link href={`/blog/${exampleSlug}`} className="text-primary hover:underline text-sm font-medium">
               View Example →
             </Link>
           </CardContent>
@@ -49,9 +70,9 @@ export function BlogLandingContent() {
           </CardHeader>
           <CardContent>
             <code className="text-sm bg-muted p-1 rounded font-mono block mb-4">
-              /blog/category/tech/nextjs
+              /blog/category/{exampleCategory}
             </code>
-            <Link href="/blog/category/tech/nextjs" className="text-blue-500 hover:underline text-sm font-medium">
+            <Link href={`/blog/category/${exampleCategory}`} className="text-blue-500 hover:underline text-sm font-medium">
               View Example →
             </Link>
           </CardContent>
@@ -70,9 +91,9 @@ export function BlogLandingContent() {
           </CardHeader>
           <CardContent>
             <code className="text-sm bg-muted p-1 rounded font-mono block mb-4">
-              /blog/date/2025/02
+              /blog/date/{exampleYear}/{exampleMonth}
             </code>
-            <Link href="/blog/date/2025/02" className="text-purple-500 hover:underline text-sm font-medium">
+            <Link href={`/blog/date/${exampleYear}/${exampleMonth}`} className="text-purple-500 hover:underline text-sm font-medium">
               View Example →
             </Link>
           </CardContent>
@@ -80,31 +101,42 @@ export function BlogLandingContent() {
       </div>
 
       <div className="space-y-8">
-        <h2 className="text-2xl font-bold">Latest Posts</h2>
-        <div className="grid gap-6">
-          {BLOG_POSTS.map((post) => (
-            <Link key={post.id} href={`/blog/${post.slug}`}>
-              <article className="group p-6 border rounded-2xl hover:border-primary/50 hover:bg-muted/30 transition-all">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">
-                    {post.title}
-                  </h3>
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">{post.date}</span>
-                </div>
-                <p className="text-muted-foreground line-clamp-2 mb-4">
-                  {post.excerpt}
-                </p>
-                <div className="flex gap-2">
-                  {post.category.map((cat) => (
-                    <Badge key={cat} variant="secondary">
-                      {cat}
-                    </Badge>
-                  ))}
-                </div>
-              </article>
-            </Link>
-          ))}
-        </div>
+        <h2 className="text-2xl font-bold">Latest Articles</h2>
+        
+        {posts.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="py-12 text-center text-muted-foreground">
+              No articles published yet. Check back soon!
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-6">
+            {posts.map((post) => (
+              <Link key={post.id} href={`/blog/${post.slug}`}>
+                <article className="group p-6 border rounded-2xl hover:border-primary/50 hover:bg-muted/30 transition-all bg-card shadow-sm hover:shadow-md">
+                  <div className="flex justify-between items-start mb-2 gap-4">
+                    <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">
+                      {post.title}
+                    </h3>
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">
+                      {formatDate(post.createdAt)}
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground line-clamp-2 mb-4">
+                    {post.excerpt}
+                  </p>
+                  <div className="flex gap-2">
+                    {post.category?.map((cat) => (
+                      <Badge key={cat} variant="secondary">
+                        {cat}
+                      </Badge>
+                    ))}
+                  </div>
+                </article>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </Section>
   );

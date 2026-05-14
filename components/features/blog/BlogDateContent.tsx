@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BlogPost } from "@/constants/blog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { Section } from "@/components/common/Section";
 
@@ -13,6 +13,12 @@ interface BlogDateContentProps {
 }
 
 export function BlogDateContent({ segments, filteredPosts, year, month }: BlogDateContentProps) {
+  const getLabel = () => {
+    if (!year) return "Archive";
+    if (!month) return `Year: ${year}`;
+    return `Archive: ${month}/${year}`;
+  };
+
   return (
     <Section className="py-12">
       <Link 
@@ -24,71 +30,54 @@ export function BlogDateContent({ segments, filteredPosts, year, month }: BlogDa
       </Link>
 
       <div className="flex flex-col gap-4 mb-12">
-        <div className="flex items-center gap-3 text-purple-500 font-medium">
-          <Calendar size={24} />
-          <h1 className="text-4xl font-bold">
-            Archive: {segments.length > 0 ? segments.join(" / ") : "All Dates"}
-          </h1>
-        </div>
-        <p className="text-muted-foreground text-lg">
-          Filter blog posts by year, month, or day using optional catch-all routes.
+        <h1 className="text-4xl font-bold">{getLabel()}</h1>
+        <p className="text-muted-foreground">
+          Showing results for <span className="font-semibold text-foreground underline decoration-primary decoration-2">{segments.join(" / ") || "all time"}</span>
         </p>
       </div>
 
-      <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
-        {!year && (
-          <div className="flex gap-2">
-            <Link href="/blog/date/2025"><Button variant="outline">Year 2025</Button></Link>
-            <Link href="/blog/date/2024"><Button variant="outline">Year 2024</Button></Link>
-          </div>
-        )}
-        {year && !month && (
-          <div className="flex gap-2">
-            <Link href={`/blog/date/${year}/02`}><Button variant="outline">February</Button></Link>
-            <Link href={`/blog/date/${year}/01`}><Button variant="outline">January</Button></Link>
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-6">
+      <div className="grid gap-6 md:grid-cols-2">
         {filteredPosts.length > 0 ? (
           filteredPosts.map((post) => (
-            <Link key={post.id} href={`/blog/${post.slug}`} className="block group">
-              <div className="flex flex-col md:flex-row md:items-center justify-between p-6 border rounded-2xl hover:bg-muted/30 hover:border-primary/50 transition-all">
-                <div>
-                  <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">{post.title}</h3>
-                  <p className="text-muted-foreground line-clamp-1">{post.excerpt}</p>
-                </div>
-                <div className="mt-4 md:mt-0 text-right">
-                  <span className="text-sm font-mono bg-muted px-3 py-1 rounded-full group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                    {post.date}
-                  </span>
-                </div>
-              </div>
+            <Link key={post.id} href={`/blog/${post.slug}`}>
+              <Card className="h-full hover:border-primary transition-all group bg-card shadow-sm hover:shadow-md">
+                <CardHeader>
+                  <CardTitle className="group-hover:text-primary transition-colors text-xl font-bold">
+                    {post.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground text-sm line-clamp-3 mb-4 leading-relaxed">
+                    {post.excerpt}
+                  </p>
+                  <div className="flex gap-2 flex-wrap">
+                    {post.category?.map((cat) => (
+                      <Badge key={cat} variant="secondary">
+                        {cat}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </Link>
           ))
         ) : (
-          <div className="py-20 text-center border-2 border-dashed rounded-3xl bg-muted/10">
-            <p className="text-muted-foreground">No posts found for this specific date range.</p>
-            <Link href="/blog/date" className="mt-4 text-primary hover:underline block text-sm font-medium">
-              Clear filters
-            </Link>
+          <div className="col-span-full py-12 text-center border-2 border-dashed rounded-3xl bg-muted/20">
+            <p className="text-muted-foreground italic">No articles found for this period.</p>
           </div>
         )}
       </div>
 
       <div className="mt-16 p-8 rounded-2xl bg-purple-500/5 border border-purple-500/20">
-        <h3 className="text-lg font-semibold mb-2 text-purple-700 dark:text-purple-400">How this works:</h3>
+        <h3 className="text-lg font-semibold mb-2">How this works:</h3>
         <p className="text-sm text-muted-foreground mb-4">
           This page uses an <code className="bg-muted p-1 rounded font-mono text-purple-500">[[...slug]]</code> (Optional Catch-all) route. 
-          Unlike the standard catch-all, this also matches the root path <code className="bg-muted p-1 rounded font-mono">/blog/date</code>.
+          It captures all segments after <code className="bg-muted p-1 rounded font-mono">/blog/date/</code>.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 bg-background rounded-lg border">
             <p className="text-xs font-mono text-muted-foreground mb-1">URL:</p>
-            <p className="text-sm font-mono break-all text-purple-500">
-              /blog/date{segments.length > 0 ? `/${segments.join("/")}` : ""}
-            </p>
+            <p className="text-sm font-mono break-all text-purple-500">/blog/date/{segments.join("/")}</p>
           </div>
           <div className="p-4 bg-background rounded-lg border">
             <p className="text-xs font-mono text-muted-foreground mb-1">Params Object:</p>
