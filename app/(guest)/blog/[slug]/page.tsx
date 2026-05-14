@@ -50,7 +50,7 @@ export default async function BlogPostPage({ params }: Props) {
     <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6">
       <BlogPostContent post={post} />
       <div className="mt-16">
-        <CommentSection />
+        <CommentSection blogId={post.id} blogAuthorId={post.authorId} />
       </div>
     </div>
   );

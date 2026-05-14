@@ -49,4 +49,27 @@ export const blogService = {
     });
     return response.data;
   },
+
+  // --- Comments ---
+
+  getComments: async (blogId: string) => {
+    const response = await axiosInstance.get(`/api/blog/v1/comments/${blogId}`);
+    return response.data;
+  },
+
+  postComment: async (blogId: string, content: string, userId: string) => {
+    const response = await axiosInstance.post("/api/blog/v1/comments", {
+      blogId,
+      content,
+      userId,
+    });
+    return response.data;
+  },
+
+  deleteComment: async (id: string, userId: string) => {
+    const response = await axiosInstance.delete(`/api/blog/v1/comments/${id}`, {
+      data: { userId },
+    });
+    return response.data;
+  },
 };

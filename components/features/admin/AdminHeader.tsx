@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, LogOut, User, PanelLeft } from "lucide-react";
+import { Menu, LogOut, User, PanelLeft, Globe } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -45,6 +45,13 @@ export function AdminHeader({ onMenuClick, onToggleCollapse }: AdminHeaderProps)
                 </p>
               </div>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href="/">
+                <Globe className="mr-2 h-4 w-4" />
+                <span>View Website</span>
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem 
               className="text-destructive focus:text-destructive cursor-pointer"
