@@ -44,4 +44,9 @@ export const authService = {
     const response = await axiosInstance.get(`/api/auth/v1/verify-email?token=${token}`);
     return response.data;
   },
+
+  getMe: async () => {
+    const response = await axiosInstance.get("/api/auth/v1/me");
+    return response.data;
+  },
 };

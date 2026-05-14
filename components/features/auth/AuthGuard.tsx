@@ -36,19 +36,20 @@ export function AuthGuard({ children, mode = "PRIVATE" }: AuthGuardProps) {
     }
   }, [isLoading, isAuthenticated, isAdmin, mode, router]);
 
-  // Show nothing while loading or if redirecting
-  if (isLoading) {
+  // Show loading while checking auth or if redirecting
+  if (isLoading || 
+     (mode === "GUEST" && isAuthenticated) || 
+     (mode === "ADMIN" && !isAdmin) || 
+     (mode === "PRIVATE" && !isAuthenticated)) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground animate-pulse">Verifying session...</p>
+        </div>
       </div>
     );
   }
-
-  // Final check to prevent content flash before redirect
-  if (mode === "GUEST" && isAuthenticated) return null;
-  if (mode === "ADMIN" && !isAdmin) return null;
-  if (mode === "PRIVATE" && !isAuthenticated) return null;
 
   return <>{children}</>;
 }

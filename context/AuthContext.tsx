@@ -30,17 +30,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Hydrate state from localStorage on initial load
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        console.error("Failed to parse user from localStorage", e);
-        localStorage.removeItem("user");
+    const initializeAuth = async () => {
+      const savedUser = localStorage.getItem("user");
+      if (savedUser) {
+        try {
+          // Hydrate state from localStorage
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
+
+          // Verify session with backend
+          const response = await authService.getMe();
+          if (response.code !== 200) {
+            throw new Error("Session invalid");
+          }
+          // Update user data with latest from server
+          setUser(response.data.user);
+          localStorage.setItem("user", JSON.stringify(response.data.user));
+        } catch (e: any) {
+          console.error("Session verification failed", e);
+
+          // Only clear session if it's a definitive auth failure (401/403)
+          const status = e.response?.status;
+          if (status === 401 || status === 403) {
+            setUser(null);
+            localStorage.removeItem("user");
+          }
+          console.log("[AuthContext]]", e)
+        }
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (data: LoginInput) => {
@@ -50,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userData = response.data.user;
         setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
-        
+
         // Role-based redirection
         if (userData.role === "ADMIN") {
           router.push("/admin");
@@ -104,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signup,
         logout,
         isAuthenticated: !!user,
-        isAdmin: user?.role === "ADMIN",
+        isAdmin: user?.role?.toUpperCase() === "ADMIN",
       }}
     >
       {children}
