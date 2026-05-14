@@ -26,7 +26,10 @@ const signupSchema = z.object({
 
 type FormData = z.infer<typeof signupSchema>;
 
+import { useAuth } from "@/context/AuthContext";
+
 export function SignupForm() {
+  const { signup } = useAuth();
   const form = useForm<FormData>({
     resolver: zodResolver(signupSchema),
     mode: "onChange",
@@ -38,11 +41,12 @@ export function SignupForm() {
   });
 
   const onSubmit = async (data: FormData) => {
-    console.log("Signup submitted:", data);
-    // Mock signup process
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast.success("Account created successfully! Please log in.");
-    form.reset();
+    try {
+      await signup(data);
+      toast.success("Signup successful. Please check your email to verify your account.");
+    } catch (error) {
+      console.log("[Signup Error]", error);
+    }
   };
 
   return (

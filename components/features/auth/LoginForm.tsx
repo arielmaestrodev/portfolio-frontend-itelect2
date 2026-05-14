@@ -17,7 +17,10 @@ const loginSchema = z.object({
 
 type FormData = z.infer<typeof loginSchema>;
 
+import { useAuth } from "@/context/AuthContext";
+
 export function LoginForm() {
+  const { login } = useAuth();
   const form = useForm<FormData>({
     resolver: zodResolver(loginSchema),
     mode: "onChange",
@@ -28,11 +31,12 @@ export function LoginForm() {
   });
 
   const onSubmit = async (data: FormData) => {
-    console.log("Login submitted:", data);
-    // Mock login process
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast.success("Logged in successfully!");
-    // Redirect logic would go here
+    try {
+      await login(data);
+      toast.success("Login successful");
+    } catch (error) {
+      console.log("[Login Error]", error);
+    }
   };
 
   return (
@@ -95,10 +99,10 @@ export function LoginForm() {
         </form>
       </CardContent>
       <CardFooter className="flex flex-col gap-4">
-        <Button 
-          type="submit" 
-          form="login-form" 
-          className="w-full" 
+        <Button
+          type="submit"
+          form="login-form"
+          className="w-full"
           disabled={form.formState.isSubmitting}
         >
           {form.formState.isSubmitting ? "Logging in..." : "Log In"}

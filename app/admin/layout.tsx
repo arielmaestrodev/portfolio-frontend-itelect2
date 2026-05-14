@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { AdminLayoutClient } from "./AdminLayoutClient";
+import { AuthGuard } from "@/components/features/auth/AuthGuard";
 
 export const metadata: Metadata = {
   robots: {
@@ -14,5 +15,9 @@ export const metadata: Metadata = {
 };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return <AdminLayoutClient>{children}</AdminLayoutClient>;
+  return (
+    <AuthGuard mode="ADMIN">
+      <AdminLayoutClient>{children}</AdminLayoutClient>
+    </AuthGuard>
+  );
 }
