@@ -46,13 +46,6 @@ export function AdminHeader({ onMenuClick, onToggleCollapse }: AdminHeaderProps)
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/admin/profile" className="flex w-full items-center">
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem 
               className="text-destructive focus:text-destructive cursor-pointer"
               onClick={() => logout()}
